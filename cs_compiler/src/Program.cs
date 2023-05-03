@@ -7,6 +7,8 @@ var running = true;
 var nodeWriter = new NodeWriter(Console.Out);
 
 var input =
+"include \"test.nyx\";\n" +
+"include \"stdio.nyx\" as std.io;\n" +
 @"
 // no public modifier
 // no abstract modifier

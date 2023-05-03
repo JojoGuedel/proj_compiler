@@ -100,7 +100,8 @@ internal class Lexer
             value += _Next();
         }
 
-        _Next(2);
+        value += _Next();
+        value += _Next();
 
         if (kind == TokenKind.@char && value.Length != 3)
             // TODO: diagnostics

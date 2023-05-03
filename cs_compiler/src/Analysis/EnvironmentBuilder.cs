@@ -1,14 +1,21 @@
-using System.Collections.Immutable;
 using Nyx.Symbols;
 
 // namespace Nyx.Analysis;
 
-public interface IReadonlyScope
+internal interface Binder {}
+
+internal class GlobalBinder : Binder
+{
+    
+}
+
+
+internal interface IReadonlyScope
 {
     public Symbol? Lookup(string name);
 }
 
-public interface IScope : IReadonlyScope 
+internal interface IScope : IReadonlyScope 
 {
     public bool Declare(Symbol symbol);
 }
