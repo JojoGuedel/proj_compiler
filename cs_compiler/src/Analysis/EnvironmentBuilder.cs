@@ -2,23 +2,23 @@ using Nyx.Symbols;
 
 // namespace Nyx.Analysis;
 
-internal interface Binder {}
+// internal interface Binder {}
 
-internal class GlobalBinder : Binder
-{
+// internal class GlobalBinder : Binder
+// {
     
-}
+// }
 
 
-internal interface IReadonlyScope
-{
-    public Symbol? Lookup(string name);
-}
+// internal interface IReadonlyScope
+// {
+//     public Symbol? Lookup(string name);
+// }
 
-internal interface IScope : IReadonlyScope 
-{
-    public bool Declare(Symbol symbol);
-}
+// internal interface IScope : IReadonlyScope 
+// {
+//     public bool Declare(Symbol symbol);
+// }
 
 // class Scope : IScope
 // {

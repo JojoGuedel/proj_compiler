@@ -395,7 +395,7 @@ internal class Parser
                 return expr;
             case TokenKind.@true:
             case TokenKind.@false:
-                return new Boolean(_current);
+                return new Boolean(_Next());
         }
 
         // TODO: diagnostics
