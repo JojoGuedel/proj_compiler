@@ -38,6 +38,15 @@ internal class Parser
         return new ErrorToken(_Next());
     }
 
+    ValueToken _MatchValue(TokenKind kind)
+    {
+        if (_current.kind == kind)
+            return (ValueToken)_Next();
+
+        // TODO: diagnostics
+        return new ErrorValueToken((ValueToken)_Next());
+    }
+
     ImmutableArray<T> _ParseUntil<T>(TokenKind terminator, Func<T> parseCallBack, TokenKind separator = TokenKind.comma)
     {
         var nodes = new List<T>();
@@ -55,7 +64,7 @@ internal class Parser
         return nodes.ToImmutableArray();
     }
 
-    Identifier _ParseIdentifier() => new Identifier((ValueToken)_Match(TokenKind.identifier));
+    Identifier _ParseIdentifier() => new Identifier(_MatchValue(TokenKind.identifier));
 
     Expression _ParseName()
     {
@@ -81,19 +90,46 @@ internal class Parser
     {
         switch(_current.kind)
         {
-            case TokenKind.function:
-                return _ParseFunction();
-            case TokenKind.@struct:
-                throw new NotImplementedException();
-            case TokenKind.global:
-                return _ParseGlobal();
             case TokenKind.newLine:
                 _Next();
                 return _ParseMember();
+            case TokenKind.@namespace:
+                return _ParseNamespace();
+            case TokenKind.@struct:
+                throw new NotImplementedException();
+            case TokenKind.function:
+                return _ParseFunction();
+            case TokenKind.global:
+                return _ParseGlobal();
+            case TokenKind.include:
+                return _ParseInclude();
             default: 
                 // TODO: add diagnostics
                 throw new NotImplementedException();
         }
+    }
+
+    Namespace _ParseNamespace() => new Namespace(
+        _Match(TokenKind.@namespace),
+        _ParseName(),
+        _Match(TokenKind.semicolon),
+        _Match(TokenKind.newLine));
+
+    Member _ParseInclude()
+    {
+        var include = _Match(TokenKind.include);
+        var file = new String(_MatchValue(TokenKind.@string));
+
+        if (_current.kind == TokenKind.semicolon)
+            return new Include(include, file, _Next(), _Match(TokenKind.newLine));
+        
+        return new IncludeAs(
+            include, 
+            file, 
+            _Match(TokenKind.@as), 
+            _ParseName(), 
+            _Match(TokenKind.semicolon), 
+            _Match(TokenKind.newLine));
     }
 
     Function _ParseFunction() => new Function(
@@ -178,8 +214,8 @@ internal class Parser
     {
         switch (_current.kind)
         {
-            case TokenKind.mutable:
             case TokenKind.var:
+            case TokenKind.mutable:
                 return _ParsesDeclarationStatement();
             case TokenKind.@return:
                 return _ParseReturnStatement();
@@ -340,7 +376,7 @@ internal class Parser
     MemberAccess _ParseMemberAccess(Expression expr) => new MemberAccess (
         expr,
         _Match(TokenKind.dot),
-        (ValueToken)_Match(TokenKind.identifier));
+        _MatchValue(TokenKind.identifier));
 
     Expression _ParsePrimary()
     {
