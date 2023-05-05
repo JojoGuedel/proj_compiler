@@ -59,7 +59,7 @@ internal class PostLexer
         {
             line.Add(new Token(TokenKind.newLine, _last.location));
 
-            for (var i = 0; i < _indent; i++)
+            for (var i = 0; i < _indent + d; i++)
                 line.Add(new Token(TokenKind.endBlock, _current.location.Point()));
         }
 

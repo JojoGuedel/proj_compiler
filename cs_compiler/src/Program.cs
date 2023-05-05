@@ -17,7 +17,10 @@ var input =
 global func main() -> void:
     a.b.c.d.e;
     mut var a: i32 = 23123;
-    print(a);";
+    print(a);
+    
+    while (true):
+        break;";
 
 Compile(input);
 Console.ReadKey(true);

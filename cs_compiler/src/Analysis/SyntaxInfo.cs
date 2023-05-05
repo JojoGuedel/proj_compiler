@@ -90,6 +90,9 @@ internal static class SyntaxInfo
         keywords.Add("return", TokenKind.@return);
         keywords.Add("error", TokenKind.error);
 
+        // keywords.Add("true", TokenKind.@true);
+        // keywords.Add("false", TokenKind.@false);
+
         keywords.Add("if", TokenKind.@if);
         keywords.Add("else", TokenKind.@else);
         keywords.Add("not", TokenKind.not);

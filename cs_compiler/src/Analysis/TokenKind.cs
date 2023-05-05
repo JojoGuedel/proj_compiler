@@ -84,6 +84,9 @@ internal enum TokenKind
     @return,
     error,
 
+    @true,
+    @false,
+
     @if,
     @else,
     not,

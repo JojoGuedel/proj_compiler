@@ -357,6 +357,9 @@ internal class Parser
                 var expr = _ParseExpression();
                 _Match(TokenKind.rParen);
                 return expr;
+            case TokenKind.@true:
+            case TokenKind.@false:
+                return new Boolean(_current);
         }
 
         // TODO: diagnostics
