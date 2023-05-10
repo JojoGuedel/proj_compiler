@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using Nyx.Analysis.Syntax;
 
 namespace Nyx.Analysis;
 
@@ -9,6 +10,8 @@ internal class Parser
 
     Token _last = Token.Empty();
     Token _current = Token.Empty();
+
+    bool report = true;
 
     internal Parser(IEnumerator<Token> source)
     {
@@ -27,6 +30,17 @@ internal class Parser
         return _last;
     }
 
+    Token _ForceNewLine()
+    {
+        var current = _Match(TokenKind.newLine);
+
+        while (current.kind != TokenKind.newLine) 
+            current = _Next();
+
+        report = true;
+        return current;
+    }
+
     Token _Match(TokenKind kind)
     {
         if (_current.kind == kind)
@@ -38,6 +52,7 @@ internal class Parser
         return new ErrorToken(_Next());
     }
 
+    // TODO: Make nodes with interfaces so that ErrorToken is compatiple with everything.
     ValueToken _MatchValue(TokenKind kind)
     {
         if (_current.kind == kind)
@@ -113,15 +128,15 @@ internal class Parser
         _Match(TokenKind.@namespace),
         _ParseName(),
         _Match(TokenKind.semicolon),
-        _Match(TokenKind.newLine));
+        _ForceNewLine());
 
     Member _ParseInclude()
     {
         var include = _Match(TokenKind.include);
-        var file = new String(_MatchValue(TokenKind.@string));
+        var file = new Syntax.String(_MatchValue(TokenKind.@string));
 
         if (_current.kind == TokenKind.semicolon)
-            return new Include(include, file, _Next(), _Match(TokenKind.newLine));
+            return new Include(include, file, _Next(), _ForceNewLine());
         
         return new IncludeAs(
             include, 
@@ -129,7 +144,7 @@ internal class Parser
             _Match(TokenKind.@as), 
             _ParseName(), 
             _Match(TokenKind.semicolon), 
-            _Match(TokenKind.newLine));
+            _ForceNewLine());
     }
 
     Function _ParseFunction() => new Function(
@@ -141,7 +156,7 @@ internal class Parser
         _Match(TokenKind.rParen),
         _ParseFunctionTypeClause(),
         _Match(TokenKind.colon),
-        _Match(TokenKind.newLine),
+        _ForceNewLine(),
         _ParseBlock());
 
     Modifiers _ParseModifiers() => new Modifiers(
@@ -160,7 +175,7 @@ internal class Parser
         _Match(TokenKind.rParen),
         _ParseFunctionTypeClause(),
         _Match(TokenKind.colon),
-        _Match(TokenKind.newLine),
+        _ForceNewLine(),
         _ParseBlock());
 
     Token _ParseOptional(TokenKind kind) 
@@ -239,13 +254,13 @@ internal class Parser
         _Match(TokenKind.equal),
         _ParseExpression(),
         _Match(TokenKind.semicolon),
-        _Match(TokenKind.newLine));
+        _ForceNewLine());
 
     ReturnStatement _ParseReturnStatement() => new ReturnStatement(
         _Match(TokenKind.@return),
         _ParseExpression(),
         _Match(TokenKind.semicolon),
-        _Match(TokenKind.newLine));
+        _ForceNewLine());
 
     IfStatement _ParseIfStatement() => new IfStatement(
         _Match(TokenKind.@if),
@@ -253,7 +268,7 @@ internal class Parser
         _ParseExpression(),
         _Match(TokenKind.rParen),
         _Match(TokenKind.colon),
-        _Match(TokenKind.newLine),
+        _ForceNewLine(),
         _ParseBlock(),
         _ParseElseStatement());
 
@@ -270,7 +285,7 @@ internal class Parser
         return new ElseStatement(
             @else,
             _Match(TokenKind.colon),
-            _Match(TokenKind.newLine),
+            _ForceNewLine(),
             _ParseBlock());
     }
 
@@ -280,7 +295,7 @@ internal class Parser
         _ParseExpression(),
         _Match(TokenKind.rParen),
         _Match(TokenKind.colon),
-        _Match(TokenKind.newLine),
+        _ForceNewLine(),
         _ParseBlock());
 
     FlowControlStatement _ParseFlowControlStatement()
@@ -293,13 +308,13 @@ internal class Parser
         return new FlowControlStatement(
             statements.ToImmutableArray(), 
             _Match(TokenKind.semicolon),
-            _Match(TokenKind.newLine));
+            _ForceNewLine());
     }
 
     ExpressionStatement _ParseExpressionStatement() => new ExpressionStatement(
         _ParseExpression(),
         _Match(TokenKind.semicolon),
-        _Match(TokenKind.newLine));
+        _ForceNewLine());
 
     Expression _ParseExpression() => _ParseBinaryExpression(SyntaxInfo.maxOperatorPrecedence);
 
@@ -385,7 +400,7 @@ internal class Parser
             case TokenKind.number:
                 return new Number((ValueToken)_Next());
             case TokenKind.@string:
-                return new String((ValueToken)_Next());
+                return new Syntax.String((ValueToken)_Next());
             case TokenKind.identifier:
                 return _ParseIdentifier();
             case TokenKind.lParen:
@@ -395,7 +410,7 @@ internal class Parser
                 return expr;
             case TokenKind.@true:
             case TokenKind.@false:
-                return new Boolean(_Next());
+                return new Syntax.Boolean(_Next());
         }
 
         // TODO: diagnostics

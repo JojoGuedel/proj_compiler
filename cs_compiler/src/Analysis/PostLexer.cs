@@ -1,3 +1,5 @@
+using Nyx.Analysis.Syntax;
+
 namespace Nyx.Analysis;
 
 internal class PostLexer

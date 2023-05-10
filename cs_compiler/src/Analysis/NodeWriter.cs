@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Reflection;
+using Nyx.Analysis.Syntax;
 
 namespace Nyx.Analysis;
 

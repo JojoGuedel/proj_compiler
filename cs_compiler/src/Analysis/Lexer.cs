@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Nyx.Analysis.Syntax;
 
 namespace Nyx.Analysis;
 

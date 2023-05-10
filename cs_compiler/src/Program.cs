@@ -1,7 +1,6 @@
 ﻿using System.Collections.Immutable;
 using Nyx.Analysis;
-using Nyx.Diagnostics;
-using Nyx.Utils;
+using Nyx.Analysis.Syntax;
 
 var running = true;
 var nodeWriter = new NodeWriter(Console.Out);

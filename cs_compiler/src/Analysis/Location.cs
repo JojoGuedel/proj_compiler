@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Nyx.Analysis.Syntax;
 
 namespace Nyx.Analysis;
 
@@ -27,4 +28,5 @@ internal class Location
     internal static Location Empty() => new Location(0, 0, 1, 1);
 
     internal static Location Embrace(Location a, Location b) => new Location(a.begin, b.end, a.lineBegin, b.lineEnd);
+    internal static Location Embrace(Node a, Node b) => Embrace(a.location, b.location);
 }
