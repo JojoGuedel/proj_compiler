@@ -52,16 +52,6 @@ internal class Parser
         return new ErrorToken(_Next());
     }
 
-    // TODO: Make nodes with interfaces so that ErrorToken is compatiple with everything.
-    ValueToken _MatchValue(TokenKind kind)
-    {
-        if (_current.kind == kind)
-            return (ValueToken)_Next();
-
-        // TODO: diagnostics
-        return new ErrorValueToken((ValueToken)_Next());
-    }
-
     ImmutableArray<T> _ParseUntil<T>(TokenKind terminator, Func<T> parseCallBack, TokenKind separator = TokenKind.comma)
     {
         var nodes = new List<T>();
@@ -79,7 +69,7 @@ internal class Parser
         return nodes.ToImmutableArray();
     }
 
-    Identifier _ParseIdentifier() => new Identifier(_MatchValue(TokenKind.identifier));
+    Identifier _ParseIdentifier() => new Identifier((ValueToken)_Match(TokenKind.identifier));
 
     Expression _ParseName()
     {
@@ -106,18 +96,61 @@ internal class Parser
         switch(_current.kind)
         {
             case TokenKind.newLine:
+                // TODO FIX: this can break the parser if the next token is a end token
                 _Next();
                 return _ParseMember();
             case TokenKind.@namespace:
                 return _ParseNamespace();
             case TokenKind.@struct:
-                throw new NotImplementedException();
+                return _ParseStruct();
             case TokenKind.function:
                 return _ParseFunction();
             case TokenKind.global:
                 return _ParseGlobal();
             case TokenKind.include:
                 return _ParseInclude();
+            default: 
+                // TODO: add diagnostics
+                throw new NotImplementedException();
+        }
+    }
+
+    Struct _ParseStruct() => new Struct(
+        _ParseModifiers(),
+        _Match(TokenKind.@struct),
+        _ParseIdentifier(),
+        _Match(TokenKind.semicolon),
+        _ForceNewLine(),
+        _ParseStructBody());
+
+    ImmutableArray<StructMember> _ParseStructBody()
+    {
+        var members = new List<StructMember>();
+        var start = _current.location;
+
+        _Match(TokenKind.beginBlock);
+
+        while(_current.kind != TokenKind.endBlock)
+        {
+            if (_current.kind == TokenKind.newLine)
+            {
+               _Next();
+               continue;
+            }
+
+            members.Add(_ParseStructMember());
+        }
+
+        return members.ToImmutableArray();
+    }
+
+    StructMember _ParseStructMember()
+    {
+        switch(_current.kind)
+        {
+            case TokenKind.newLine:
+                _Next();
+                return _ParseStructMember();
             default: 
                 // TODO: add diagnostics
                 throw new NotImplementedException();
@@ -133,7 +166,7 @@ internal class Parser
     Member _ParseInclude()
     {
         var include = _Match(TokenKind.include);
-        var file = new Syntax.String(_MatchValue(TokenKind.@string));
+        var file = new Syntax.String((ValueToken)_Match(TokenKind.@string));
 
         if (_current.kind == TokenKind.semicolon)
             return new Include(include, file, _Next(), _ForceNewLine());
@@ -157,7 +190,7 @@ internal class Parser
         _ParseFunctionTypeClause(),
         _Match(TokenKind.colon),
         _ForceNewLine(),
-        _ParseBlock());
+        _ParseBody());
 
     Modifiers _ParseModifiers() => new Modifiers(
         _ParseOptional(TokenKind.@static),
@@ -176,7 +209,7 @@ internal class Parser
         _ParseFunctionTypeClause(),
         _Match(TokenKind.colon),
         _ForceNewLine(),
-        _ParseBlock());
+        _ParseBody());
 
     Token _ParseOptional(TokenKind kind) 
     {
@@ -202,7 +235,7 @@ internal class Parser
         _Match(TokenKind.rArrow),
         _ParseName());
 
-    Block _ParseBlock()
+    Block _ParseBody()
     {
         var statements = new List<Statement>();
         var start = _current.location;
@@ -269,7 +302,7 @@ internal class Parser
         _Match(TokenKind.rParen),
         _Match(TokenKind.colon),
         _ForceNewLine(),
-        _ParseBlock(),
+        _ParseBody(),
         _ParseElseStatement());
 
     Statement _ParseElseStatement()
@@ -286,7 +319,7 @@ internal class Parser
             @else,
             _Match(TokenKind.colon),
             _ForceNewLine(),
-            _ParseBlock());
+            _ParseBody());
     }
 
     WhileStatement _ParseWhileStatement() => new WhileStatement(
@@ -296,7 +329,7 @@ internal class Parser
         _Match(TokenKind.rParen),
         _Match(TokenKind.colon),
         _ForceNewLine(),
-        _ParseBlock());
+        _ParseBody());
 
     FlowControlStatement _ParseFlowControlStatement()
     {
@@ -391,7 +424,7 @@ internal class Parser
     MemberAccess _ParseMemberAccess(Expression expr) => new MemberAccess (
         expr,
         _Match(TokenKind.dot),
-        _MatchValue(TokenKind.identifier));
+        (ValueToken)_Match(TokenKind.identifier));
 
     Expression _ParsePrimary()
     {
