@@ -15,5 +15,3 @@ internal class FlowControlStatement : Statement
         this.statements = statements;
     }
 }
-
-

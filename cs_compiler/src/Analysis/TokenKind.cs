@@ -101,6 +101,7 @@ internal enum TokenKind
     @while,
     @continue,
     @break,
+    pass,
 
     include,
     @as,

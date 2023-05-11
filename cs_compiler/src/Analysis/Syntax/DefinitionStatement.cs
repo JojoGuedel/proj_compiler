@@ -1,6 +1,6 @@
 namespace Nyx.Analysis.Syntax;
 
-internal class DeclarationStatement : Statement
+internal class DefinitionStatement : Statement
 {
     internal override Location location { get; }
     public Modifiers modifiers { get; }
@@ -8,7 +8,7 @@ internal class DeclarationStatement : Statement
     public TypeClause type { get; }
     public Expression assignment { get; }
 
-    internal DeclarationStatement(
+    internal DefinitionStatement(
         Modifiers modifiers, 
         Token var, 
         Identifier name, 

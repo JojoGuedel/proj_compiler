@@ -15,6 +15,9 @@ var input =
 
 // no templates
 
+struct A:
+    var a: int;
+
 global func main() -> void:
     a.b.c.d.e;
     mut var a: i32 = 23123;

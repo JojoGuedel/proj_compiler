@@ -6,10 +6,10 @@ internal class MemberAccess : Expression
     public Expression expression { get; }
     public Identifier identifier { get; }
 
-    internal MemberAccess(Expression expression, Token dot, ValueToken name)
+    internal MemberAccess(Expression expression, Token dot, Identifier name)
     {
         location = Location.Embrace(expression, name);
         this.expression = expression;
-        this.identifier = new Identifier(name);
+        this.identifier = name;
     }
 }

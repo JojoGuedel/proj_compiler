@@ -107,6 +107,7 @@ internal static class SyntaxInfo
         keywords.Add("while", TokenKind.@while);
         keywords.Add("continue", TokenKind.@continue);
         keywords.Add("break", TokenKind.@break);
+        keywords.Add("pass", TokenKind.pass);
 
         keywords.Add("include", TokenKind.include);
         keywords.Add("as", TokenKind.@as);

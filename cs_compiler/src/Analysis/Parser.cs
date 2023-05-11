@@ -86,7 +86,12 @@ internal class Parser
         var members = new List<Member>();
 
         while (_current.kind != TokenKind.end)
-            members.Add(_ParseMember());
+        {
+            if (_current.kind == TokenKind.newLine)
+                _Next();
+            else
+                members.Add(_ParseMember());
+        }
         
         return new CompilationUnit(members.ToImmutableArray(), _current);
     }
@@ -95,10 +100,6 @@ internal class Parser
     {
         switch(_current.kind)
         {
-            case TokenKind.newLine:
-                // TODO FIX: this can break the parser if the next token is a end token
-                _Next();
-                return _ParseMember();
             case TokenKind.@namespace:
                 return _ParseNamespace();
             case TokenKind.@struct:
@@ -133,13 +134,11 @@ internal class Parser
         while(_current.kind != TokenKind.endBlock)
         {
             if (_current.kind == TokenKind.newLine)
-            {
                _Next();
-               continue;
-            }
-
-            members.Add(_ParseStructMember());
+            else
+                members.Add(_ParseStructMember());
         }
+        _Next();
 
         return members.ToImmutableArray();
     }
@@ -148,13 +147,51 @@ internal class Parser
     {
         switch(_current.kind)
         {
-            case TokenKind.newLine:
-                _Next();
-                return _ParseStructMember();
+            case TokenKind.var:
+                return _ParseProperty();
+            case TokenKind.function:
+            case TokenKind.global:
+            case TokenKind.@static:
+                throw new NotImplementedException();
+            case TokenKind.pass:
+                return _ParseStructPassStatement();
             default: 
                 // TODO: add diagnostics
                 throw new NotImplementedException();
         }
+    }
+
+    StructPassStatement _ParseStructPassStatement() => new StructPassStatement(
+        _Match(TokenKind.pass),
+        _Match(TokenKind.semicolon),
+        _ForceNewLine());
+
+    Property _ParseProperty() => new Property(
+        _Match(TokenKind.var),
+        _ParseIdentifier(),
+        _ParseTypeClause(),
+        _ParseAccessorClause(),
+        _Match(TokenKind.semicolon),
+        _ForceNewLine());
+
+    AccessorClause _ParseAccessorClause()
+    {
+        if (_current.kind != TokenKind.bigRArrow)
+            return new AccessorClause(_current.EmptyPoint(), _current.EmptyPoint(), _current.EmptyPoint());
+
+        Token bigRArrow = _Match(TokenKind.bigRArrow);
+        if (_current.kind == TokenKind.get)
+        {
+            Token get = _current;
+
+            if (_current.kind != TokenKind.comma)
+                return new AccessorClause(bigRArrow, get, _current.EmptyPoint());
+            
+            _Next();
+            return new AccessorClause(bigRArrow, get, _Match(TokenKind.set));
+        }
+
+        return new AccessorClause(bigRArrow, _current.EmptyPoint(), _Match(TokenKind.get));
     }
 
     Namespace _ParseNamespace() => new Namespace(
@@ -253,6 +290,8 @@ internal class Parser
             statements.Add(_ParseStatement());
         }
 
+        // TODO: repot empty blocks
+
         return new Block(
             statements.ToImmutableArray(), 
             Location.Embrace(start, _Next().location));
@@ -262,24 +301,32 @@ internal class Parser
     {
         switch (_current.kind)
         {
+            case TokenKind.semicolon:
+            
             case TokenKind.var:
             case TokenKind.mutable:
-                return _ParsesDeclarationStatement();
+                return _ParseDefinitionStatement();
             case TokenKind.@return:
                 return _ParseReturnStatement();
             case TokenKind.@if:
                 return _ParseIfStatement();
+            case TokenKind.@switch:
+            case TokenKind.@for:
+            case TokenKind.@do:
+                throw new NotImplementedException();
             case TokenKind.@while:
                 return _ParseWhileStatement();
             case TokenKind.@continue:
             case TokenKind.@break:
                 return _ParseFlowControlStatement();
+            case TokenKind.pass:
+                return _ParsePassStatement();
             default:
                 return _ParseExpressionStatement();
         }
     }
 
-    DeclarationStatement _ParsesDeclarationStatement() => new DeclarationStatement(
+    DefinitionStatement _ParseDefinitionStatement() => new DefinitionStatement(
         _ParseModifiers(),
         _Match(TokenKind.var),
         _ParseIdentifier(),
@@ -343,6 +390,11 @@ internal class Parser
             _Match(TokenKind.semicolon),
             _ForceNewLine());
     }
+
+    PassStatement _ParsePassStatement() => new PassStatement(
+        _Match(TokenKind.pass), 
+        _Match(TokenKind.semicolon),
+        _ForceNewLine());
 
     ExpressionStatement _ParseExpressionStatement() => new ExpressionStatement(
         _ParseExpression(),
@@ -424,7 +476,7 @@ internal class Parser
     MemberAccess _ParseMemberAccess(Expression expr) => new MemberAccess (
         expr,
         _Match(TokenKind.dot),
-        (ValueToken)_Match(TokenKind.identifier));
+        _ParseIdentifier());
 
     Expression _ParsePrimary()
     {
